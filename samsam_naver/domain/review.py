@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
 class Review(BaseModel):
-    id: str
-    product_id: str
-    product_name: str
-    rating: float
+    rating: int
+    user: str
+    date: str
     text: str
+    image: str | None = None
