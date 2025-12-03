@@ -3,6 +3,12 @@ from dotenv import load_dotenv
 from config.database.session import Base, engine
 
 from samsam_board.adapter.input.web.samsam_board_router import samsam_board_router
+from fastapi import FastAPI
+from samsam_naver.adapter.naver_router import router as naver_router
+
+app = FastAPI()
+
+app.include_router(naver_router)
 
 
 load_dotenv()
