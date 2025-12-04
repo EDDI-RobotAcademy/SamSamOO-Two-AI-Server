@@ -1,6 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright
 
+
 async def fetch_reviews(catalog_id: str):
     url = f"https://smartstore.naver.com/brands/products/{catalog_id}"
     api_url = "https://smartstore.naver.com/i/v1/reviews/paged-reviews"
@@ -20,11 +21,11 @@ async def fetch_reviews(catalog_id: str):
 
         page.on("response", handle_response)
 
-        # 제품 페이지 진입 (리뷰 XHR 자동 발생)
+        # 제품 페이지 진입 (리뷰 API 자동 호출됨)
         await page.goto(url, wait_until="networkidle")
 
-        # XHR이 올 때까지 대기
-        for _ in range(10):
+        # XHR 응답 대기
+        for _ in range(20):  # 최대 6초 정도 기다림
             if reviews_data:
                 break
             await asyncio.sleep(0.3)
