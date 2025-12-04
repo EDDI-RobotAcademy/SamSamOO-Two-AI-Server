@@ -1,7 +1,6 @@
 import asyncio
 from playwright.async_api import async_playwright
 
-
 async def fetch_reviews(catalog_id: str):
     url = f"https://smartstore.naver.com/brands/products/{catalog_id}"
     api_url = "https://smartstore.naver.com/i/v1/reviews/paged-reviews"
@@ -12,31 +11,23 @@ async def fetch_reviews(catalog_id: str):
 
         reviews_data = None
 
-        # XHR 요청 인터셉트
-        async def handle_response(response):
+        async def on_response(response):
             nonlocal reviews_data
-            if api_url in response.url:
-                if response.status == 200:
-                    reviews_data = await response.json()
+            if api_url in response.url and response.status == 200:
+                reviews_data = await response.json()
 
-        page.on("response", handle_response)
+        page.on("response", on_response)
 
-        # 제품 페이지 진입 (리뷰 API 자동 호출됨)
         await page.goto(url, wait_until="networkidle")
 
-        # XHR 응답 대기
-        for _ in range(20):  # 최대 6초 정도 기다림
+        for _ in range(20):
             if reviews_data:
                 break
             await asyncio.sleep(0.3)
 
         await browser.close()
 
-        if reviews_data is None:
-            raise Exception("리뷰 API 응답을 받지 못했습니다. catalog_id를 다시 확인하세요.")
+        if not reviews_data:
+            raise Exception("리뷰 데이터를 가져올 수 없습니다. catalog_id를 확인하세요.")
 
-        return reviews_data
-
-
-async def get_reviews(catalog_id: str):
-    return await fetch_reviews(catalog_id)
+        return reviews_data.get("contents", [])

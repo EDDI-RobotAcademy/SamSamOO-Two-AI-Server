@@ -1,12 +1,10 @@
-from samsam_naver.infrastructure.naver_review_playwright import get_reviews as playwright_reviews
+from samsam_naver.infrastructure.naver_api import search_api
+from samsam_naver.infrastructure.naver_review_playwright import fetch_reviews
 
-class NaverService:
 
-    @staticmethod
-    async def search_products(query: str):
-        from samsam_naver.infrastructure.naver_api import search_products
-        return search_products(query)
+async def search_products(query: str):
+    return search_api(query)
 
-    @staticmethod
-    async def get_reviews(catalog_id: str):
-        return await playwright_reviews(catalog_id)
+
+async def get_reviews(catalog_id: str):
+    return await fetch_reviews(catalog_id)
