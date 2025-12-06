@@ -1,0 +1,13 @@
+from abc import ABC, abstractmethod
+from typing import List, Optional
+from product_analysis.domain.entity.product import Product
+
+class ProductRepositoryPort(ABC):
+    @abstractmethod
+    def save(self, product: Product) -> Product: ...
+    @abstractmethod
+    def find_by_item_code(self, source: str, item_code: str) -> Optional[Product]: ...
+    @abstractmethod
+    def find_by_id(self, pid: int) -> Optional[Product]: ...
+    @abstractmethod
+    def find_all(self, limit: int = 10) -> List[Product]: ...

@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from config.database.session import Base, engine
+from product_analysis.adapter.input.web.product_router import router as product_router
 
 from samsam_board.adapter.input.web.samsam_board_router import samsam_board_router
 
@@ -28,8 +29,11 @@ app.add_middleware(
 )
 
 app.include_router(samsam_board_router, prefix="/board")
+app.include_router(product_router, prefix="/api")
 
-
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 # 앱 실행
 if __name__ == "__main__":
     import uvicorn
