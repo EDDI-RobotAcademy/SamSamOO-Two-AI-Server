@@ -13,6 +13,6 @@ class ReviewItem(BaseModel):
 class ReviewFetchResponse(BaseModel):
     product_name: str
     platform: str
-    product_id: int
+    product_id: str
     review_count: int
     reviews: List[ReviewItem]

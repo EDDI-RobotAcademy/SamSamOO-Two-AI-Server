@@ -17,7 +17,7 @@ class ReviewRepositoryImpl(ReviewRepositoryPort):
         for r in reviews:
             row = ReviewORM(
                 source=r.platform.value,
-                source_product_id=str(r.product_id),
+                source_product_id=r.product_id,
                 reviewer=r.reviewer,
                 rating=r.rating,
                 content=r.content,

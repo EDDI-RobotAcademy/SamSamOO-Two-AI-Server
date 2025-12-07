@@ -5,4 +5,4 @@ class ReviewRequest(BaseModel):
 
 class FetchReviewsRequest(BaseModel):
     platform: str
-    product_id: int
+    product_id: str
