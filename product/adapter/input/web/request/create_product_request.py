@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from product.domain.entity.product import Platform
+from product.domain.entity.product import Platform, ProductCategory
 
 
 class ProductCreateRequest(BaseModel):
@@ -9,6 +9,7 @@ class ProductCreateRequest(BaseModel):
     title: str = Field(..., description="상품 제목 (검증 후 최종 확정)")
     source_url: str = Field(..., description="상품 상세 URL (검증의 기준)")
     price: Optional[int] = Field(None, description="상품 가격 (선택 사항)")
+    category: ProductCategory = Field(..., description="상품 카테고리 (FOOD, DIGITAL, CLOTHING, ETC)")
 
     class Config:
         use_enum_values = True

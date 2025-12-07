@@ -1,7 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-from product.domain.entity.product import Product, Platform, ProductStatus
+from product.domain.entity.product import Product, Platform, ProductStatus, ProductCategory, AnalysisStatus
 from product.infrastructure.orm.product_orm import ProductORM
 from product.application.port.product_repository_port import ProductRepositoryPort
 from config.database.session import get_db_session
@@ -25,6 +25,8 @@ class ProductRepositoryImpl(ProductRepositoryPort):
             source=_to_enum_value(product.source, Platform),
             source_product_id=product.source_product_id,
             title=product.title,
+            category=_to_enum_value(product.category, ProductCategory),
+            analysis_status=_to_enum_value(product.analysis_status, AnalysisStatus),
             price=product.price,
             seller=product.seller,
             rating=product.rating,
@@ -61,6 +63,8 @@ class ProductRepositoryImpl(ProductRepositoryPort):
         orm.url = product.source_url
         orm.status = _to_enum_value(product.status, ProductStatus)
         orm.seller_id = product.seller_id
+        orm.category = _to_enum_value(product.category, ProductCategory)
+        orm.analysis_status = _to_enum_value(product.analysis_status, AnalysisStatus)
 
         self.db.commit()
         self.db.refresh(orm)
@@ -104,6 +108,8 @@ class ProductRepositoryImpl(ProductRepositoryPort):
             seller_id=orm.seller_id,
             collected_at=orm.collected_at,
             registered_at=orm.collected_at,
+            category=ProductCategory.from_string(orm.category),
+            analysis_status=AnalysisStatus.from_string(orm.analysis_status),
         )
 
     def find_all(self, limit: int = 10) -> List[Product]:
@@ -125,6 +131,8 @@ class ProductRepositoryImpl(ProductRepositoryPort):
                     seller_id=orm.seller_id,
                     collected_at=orm.collected_at,
                     registered_at=orm.collected_at,
+                    category=ProductCategory.from_string(orm.category),
+                    analysis_status=AnalysisStatus.from_string(orm.analysis_status),
                 )
             )
 
@@ -153,6 +161,8 @@ class ProductRepositoryImpl(ProductRepositoryPort):
                 seller_id=orm.seller_id,
                 collected_at=orm.collected_at,
                 registered_at=orm.collected_at,
+                category=ProductCategory.from_string(orm.category),
+                analysis_status=AnalysisStatus.from_string(orm.analysis_status),
             )
             for orm in orms
         ]
