@@ -28,7 +28,7 @@ class Review:
 
     def __init__(
         self,
-        product_id: int,                        # 플랫폼/서비스에서 관리하는 상품 고유 ID
+        product_id: str,                        # 플랫폼/서비스에서 관리하는 상품 고유 ID
         platform: ReviewPlatform | str,         # 리뷰가 수집된 플랫폼 (ENUM)
         content: str,                           # 리뷰 본문
 
@@ -43,7 +43,7 @@ class Review:
             platform = ReviewPlatform.from_string(platform)
 
         # 복합키 구성요소 (id 없음)
-        self.product_id = product_id
+        self.product_id = str(product_id)
         self.platform = platform
 
         self.reviewer = reviewer
@@ -57,7 +57,7 @@ class Review:
     @classmethod
     def create_from_crawler(
         cls,
-        product_id: int,
+        product_id: str | int,
         platform: str | ReviewPlatform,
         content: str,
         reviewer: Optional[str] = None,

@@ -7,18 +7,11 @@ from product.infrastructure.repository.product_repository_impl import ProductRep
 from product.adapter.input.web.request.create_product_request import ProductCreateRequest
 from product.adapter.input.web.response.product_response import ProductResponse
 
-# 임시추가 리펙터링 및 도메인 분리 필요
-from product_analysis.adapter.input.web.request.crawl_review_request import ReviewRequest
-from config.database.session import get_db_session
-from product.infrastructure.orm.product_orm import ProductORM
-from product_analysis.infrastructure.external.elevenSt_scraper import ElevenStScraperAdapter
-from fastapi.concurrency import run_in_threadpool
 
 # ⭐️ 의존성 주입을 위한 임시 설정 (실제 프로젝트에서는 Depends 사용 권장)
 _product_repo = ProductRepositoryImpl()
 product_uc = ProductUseCase(_product_repo)
 
-# ----------------------------------------------------------
 product_router = APIRouter(tags=["product"])
 
 
@@ -35,7 +28,7 @@ def create_product(req: ProductCreateRequest):
     # ⭐️ 수정: source_product_id를 Product.create에 올바르게 전달 ⭐️
     new_product = Product.create(
         source=req.source,
-        source_product_id=req.source_product_id,  # ⭐️ DTO에서 받은 복합 키 전달
+        source_product_id=req.source_product_id,
         title=req.title,
         source_url=req.source_url,  # DTO의 url을 source_url로 전달
         price=req.price,
@@ -131,30 +124,3 @@ def delete_product(
 
     # HTTP 204 No Content는 삭제 성공 시 본문 없이 응답하는 표준입니다.
     return
-
-# 임시 추가: 상품명 → 상품코드 조회 + 리뷰 크롤링 API
-# ======================================================================
-
-
-def get_product_code_by_name(product_name: str) -> str | None:
-    db = get_db_session()
-    try:
-        product = db.query(ProductORM).filter(ProductORM.title == product_name).first()
-        return product.source_product_id if product else None
-    finally:
-        db.close()
-
-
-@product_router.post("/reviews/get")
-async def get_reviews(req: ReviewRequest):
-    product_code = get_product_code_by_name(req.product_name)
-    if not product_code:
-        raise HTTPException(status_code=404, detail="상품을 찾을 수 없습니다.")
-
-    # 동기 크롤러를 threadpool에서 실행
-    result = await run_in_threadpool(ElevenStScraperAdapter.crawl_11st_reviews, int(product_code))
-
-    if "error" in result:
-        raise HTTPException(status_code=500, detail=result["error"])
-
-    return result

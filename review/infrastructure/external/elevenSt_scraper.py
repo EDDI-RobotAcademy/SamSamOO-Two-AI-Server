@@ -3,12 +3,71 @@ import random
 from typing import Dict, Any, List, Optional
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
+from datetime import datetime
+
+from review.application.port.scraper_port import ScraperPort
+from product.domain.entity.product import Product
+from review.domain.entity.review import Review, ReviewPlatform
 
 HEADLESS = True
 
-class ElevenStScraperAdapter:
 
-    def crawl_11st_reviews(product_code: int) -> Dict[str, Any]:
+# ⭐️ ScraperPort 상속 추가
+class ElevenStScraperAdapter(ScraperPort):
+
+    # ⭐️ ScraperPort의 fetch_reviews 구현 (limit 제거)
+    def fetch_reviews(self, product: Product) -> List[Review]:
+
+        # 11번가 전용 로직
+        if product.source.value != ReviewPlatform.ELEVENST.value:
+            raise ValueError(f"지원하지 않는 플랫폼: {product.source}")
+
+        # 크롤링 함수 호출 (product_id는 int여야 함)
+        try:
+            product_code = int(product.source_product_id)
+        except ValueError:
+            raise ValueError("product_id는 11번가 상품 코드(정수)여야 합니다.")
+
+        result = self._crawl_11st_reviews(product_code)  # ⭐️ 내부 메서드 호출
+
+        if 'error' in result:
+            print(f"[ERROR] 크롤링 오류: {result['error']}")
+            return []
+
+        reviews_data = result.get("reviews", [])
+
+        # 도메인 엔티티로 변환하여 반환
+        reviews = []
+        for item in reviews_data:  # ⭐️ limit 없이 모든 리뷰 처리
+            try:
+                # rating 문자열 ('X점') 처리
+                rating_str = item.get("rating", "0점").replace('점', '').strip()
+                rating = float(rating_str)
+
+                # date 문자열 처리 (11번가는 'YYYY.MM.DD' 형식으로 가정)
+                date_text = item.get("date", datetime.utcnow().strftime('%Y.%m.%d'))
+                if date_text == "날짜 정보 없음":
+                    review_at = datetime.utcnow()
+                else:
+                    review_at = datetime.strptime(date_text, '%Y.%m.%d')
+
+                review_entity = Review.create_from_crawler(
+                    product_id=str(product_code),  # ⭐️ ORM과 통일하기 위해 str로 저장
+                    platform=product.source,
+                    content=item["content"],
+                    reviewer=item["user_id"],
+                    rating=rating,
+                    review_at=review_at
+                )
+                reviews.append(review_entity)
+            except Exception as e:
+                print(f"[WARNING] 리뷰 엔티티 변환 실패: {e} / Data: {item}")
+                continue
+
+        return reviews
+
+    # ⭐️ 기존 crawl_11st_reviews 함수를 내부 인스턴스 메서드로 변경
+    def _crawl_11st_reviews(self, product_code: int) -> Dict[str, Any]:
         url = f"https://www.11st.co.kr/products/{product_code}"
         all_reviews: List[Dict[str, str]] = []
         store_name: Optional[str] = None
@@ -43,7 +102,6 @@ class ElevenStScraperAdapter:
 
                 # 상품명/상호명 추출
                 try:
-                    # Playwright는 .text_content()를 사용합니다.
                     product_title = page.locator(TITLE_SELECTOR).text_content(timeout=10000).strip()
                     store_name = page.locator(STORE_NAME_SELECTOR).text_content(timeout=10000).strip()
                     print(f"[INFO] 상품명/상호명 추출 성공: {product_title[:15]}... / {store_name}")
@@ -57,7 +115,6 @@ class ElevenStScraperAdapter:
                     review_tab.scroll_into_view_if_needed()
                     review_tab.click()
                     print("[INFO] 리뷰 탭 클릭 성공. iframe 로드 대기.")
-                    # iframe 로드 시간 대기
                     time.sleep(random.uniform(4, 6))
                 except PWTimeout:
                     print("[ERROR] 리뷰 탭을 찾지 못했습니다.")
@@ -71,7 +128,7 @@ class ElevenStScraperAdapter:
                     print(f"[FATAL ERROR] iframe ({IFRAME_SELECTOR})을 찾지 못했습니다.")
                     return {"error": "iframe 전환 실패"}
 
-                # 6. '리뷰 더보기' 버튼 반복 클릭 루프
+                # 6. '리뷰 더보기' 버튼 반복 클릭 루프 (모든 리뷰 로드)
                 while True:
                     print(f">>> 리뷰 로딩 중... (현재 수집된 리뷰 수: {len(all_reviews)}개)")
 
@@ -95,7 +152,6 @@ class ElevenStScraperAdapter:
                 # 7. 개별 리뷰 '더보기' 버튼 클릭 (긴 리뷰 전체 내용 확보)
                 print(">>> 전체 리뷰 데이터 추출 시작...")
                 try:
-                    # iframe 내부에서 모든 '더보기' 버튼을 찾습니다.
                     more_text_buttons = review_frame_locator.locator(MORE_TEXT_BUTTON_SELECTOR).all()
                     if more_text_buttons:
                         print(f"  [INFO] 긴 리뷰 '더보기' 버튼 {len(more_text_buttons)}개 발견. 클릭 시도...")
@@ -113,10 +169,9 @@ class ElevenStScraperAdapter:
                     print(f"  [WARNING] 개별 리뷰 '더보기' 클릭 로직 오류 발생: {e}")
 
                 # 8. BeautifulSoup으로 전체 리뷰 데이터 파싱
-                # ⭐️⭐️⭐️ [핵심 수정 1]: FrameLocator에서 .inner_html()을 사용하여 HTML 내용 추출 ⭐️⭐️⭐️
-                # iframe의 body 태그의 내부 HTML을 가져옵니다.
                 iframe_html = review_frame_locator.locator('body').inner_html()
                 soup = BeautifulSoup(iframe_html, 'html.parser')
+                # ⭐️ 기존 리뷰 목록 전체를 다시 파싱합니다. (이전 수집된 all_reviews는 무시)
                 reviews = soup.select(REVIEW_ITEM_SELECTOR)
 
                 for review in reviews:
@@ -127,10 +182,13 @@ class ElevenStScraperAdapter:
                         if content.strip() == "리뷰 내용 없음":
                             continue
 
-                        # 데이터 추출 (BeautifulSoup 사용)
                         user_id_tag = review.select_one('dl.c_product_reviewer dt.name')
+                        # data-nick 속성이나, 텍스트를 사용
                         user_id = user_id_tag.get('data-nick', user_id_tag.text).strip() if user_id_tag else "ID_ERROR"
-                        rating_text = review.select_one('p.grade em').text.strip()
+
+                        # 평점 'X점'에서 숫자만 추출
+                        rating_text = review.select_one('p.grade em').text.strip().replace('점', '')
+
                         option_tag = review.select_one('dl.option_set dd')
                         option = option_tag.text.strip() if option_tag else "옵션 정보 없음"
                         date_tag = review.select_one('p.side span.date')
@@ -139,9 +197,8 @@ class ElevenStScraperAdapter:
                         all_reviews.append({
                             "product_title": product_title,
                             "store_name": store_name,
-                            "page": "Loaded",
                             "user_id": user_id,
-                            "rating": f"{rating_text}점",
+                            "rating": rating_text,  # 숫자만 남긴 문자열
                             "option": option,
                             "content": content,
                             "date": date_text
@@ -154,11 +211,11 @@ class ElevenStScraperAdapter:
 
         except Exception as e:
             print(f"[FATAL ERROR] 크롤링 중 치명적인 오류 발생: {e}")
-            # 오류 발생 시 브라우저가 아직 열려있다면 닫아줍니다.
             if browser:
                 try:
                     browser.close()
                 except Exception:
                     pass
 
-        return {"count": len(all_reviews), "reviews": all_reviews, "store_name": store_name, "product_title": product_title}
+        return {"count": len(all_reviews), "reviews": all_reviews, "store_name": store_name,
+                "product_title": product_title}

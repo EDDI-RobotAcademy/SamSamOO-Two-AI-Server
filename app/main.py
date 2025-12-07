@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from config.database.session import Base, engine
 
-from samsam_board.adapter.input.web.samsam_board_router import samsam_board_router
+from review.adapter.input.web.review_router import review_router
 from product.adapter.input.web.product_router import product_router
 
 load_dotenv()
@@ -27,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],         # 모든 헤더 허용
 )
 
-app.include_router(samsam_board_router, prefix="/board")
+app.include_router(review_router, prefix="/review")
 app.include_router(product_router, prefix="/product")
 
 # 앱 실행
