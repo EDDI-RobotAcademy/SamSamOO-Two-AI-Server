@@ -1,6 +1,6 @@
 from typing import List, Optional
-from product_analysis.application.port.product_repository_port import ProductRepositoryPort
-from product_analysis.domain.entity.product import Product, Platform
+from product.application.port.product_repository_port import ProductRepositoryPort
+from product.domain.entity.product import Product, Platform
 
 
 class ProductUseCase:

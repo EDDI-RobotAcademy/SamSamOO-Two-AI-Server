@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import List
 from product_analysis.application.port.scraper_port import ScraperPort
-from product_analysis.domain.entity.product import Product
+from product.domain.entity.product import Product
 from product_analysis.domain.entity.review import Review
 
 USE_PLAYWRIGHT = os.getenv("USE_PLAYWRIGHT", "false").lower() == "true"  # 기본 false로!

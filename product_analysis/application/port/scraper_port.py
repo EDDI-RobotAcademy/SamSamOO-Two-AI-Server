@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from product_analysis.domain.entity.product import Product
+from product.domain.entity.product import Product
 from product_analysis.domain.entity.review import Review
 
 class ScraperPort(ABC):

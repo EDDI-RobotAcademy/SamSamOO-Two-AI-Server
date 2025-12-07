@@ -1,20 +1,16 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List
 
-# --- Domain & Application Imports ---
-from product_analysis.domain.entity.product import Product, Platform
-from product_analysis.application.usecase.product_usecase import ProductUseCase
-from product_analysis.domain.service import analyzer_service
-from product_analysis.domain.service.sentiment_analyzer import SentimentAnalyzer
-from product_analysis.infrastructure.external.llm_adapter import LLMAdapter
-from product_analysis.infrastructure.repository.product_repository_impl import ProductRepositoryImpl
-from product_analysis.adapter.input.web.request.create_product_request import ProductCreateRequest
-from product_analysis.adapter.input.web.response.product_response import ProductResponse
+from product.domain.entity.product import Product, Platform
+from product.application.usecase.product_usecase import ProductUseCase
+from product.infrastructure.repository.product_repository_impl import ProductRepositoryImpl
+from product.adapter.input.web.request.create_product_request import ProductCreateRequest
+from product.adapter.input.web.response.product_response import ProductResponse
 
 # 임시추가 리펙터링 및 도메인 분리 필요
 from product_analysis.adapter.input.web.request.crawl_review_request import ReviewRequest
 from config.database.session import get_db_session
-from product_analysis.infrastructure.orm.product_orm import ProductORM
+from product.infrastructure.orm.product_orm import ProductORM
 from product_analysis.infrastructure.external.elevenSt_scraper import ElevenStScraperAdapter
 from fastapi.concurrency import run_in_threadpool
 

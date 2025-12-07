@@ -1,8 +1,8 @@
 from typing import List
-from product_analysis.application.port.product_repository_port import ProductRepositoryPort
+from product.application.port.product_repository_port import ProductRepositoryPort
 from product_analysis.application.port.review_repository_port import ReviewRepositoryPort
 from product_analysis.application.port.scraper_port import ScraperPort
-from product_analysis.domain.entity.product import Product
+from product.domain.entity.product import Product
 from product_analysis.domain.entity.review import Review
 
 

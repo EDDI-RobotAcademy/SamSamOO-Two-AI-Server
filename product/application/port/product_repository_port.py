@@ -1,6 +1,6 @@
 from typing import List, Optional
 from abc import ABC, abstractmethod
-from product_analysis.domain.entity.product import Product, Platform
+from product.domain.entity.product import Product, Platform
 
 
 class ProductRepositoryPort(ABC):

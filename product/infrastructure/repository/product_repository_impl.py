@@ -1,9 +1,9 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-from product_analysis.domain.entity.product import Product, Platform, ProductStatus
-from product_analysis.infrastructure.orm.product_orm import ProductORM
-from product_analysis.application.port.product_repository_port import ProductRepositoryPort
+from product.domain.entity.product import Product, Platform, ProductStatus
+from product.infrastructure.orm.product_orm import ProductORM
+from product.application.port.product_repository_port import ProductRepositoryPort
 from config.database.session import get_db_session
 
 

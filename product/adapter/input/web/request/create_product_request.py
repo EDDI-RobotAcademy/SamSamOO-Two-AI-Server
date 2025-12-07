@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from product_analysis.domain.entity.product import Platform
+from product.domain.entity.product import Platform
 
 
 class ProductCreateRequest(BaseModel):
