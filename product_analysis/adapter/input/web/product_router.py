@@ -162,38 +162,3 @@ async def get_reviews(req: ReviewRequest):
         raise HTTPException(status_code=500, detail=result["error"])
 
     return result
-
-@product_router.post("/reviews/analyze")
-async def analyze_reviews(req: ReviewRequest):
-    # 1️⃣ DB에서 상품 코드 조회
-    product_code = get_product_code_by_name(req.product_name)
-    if not product_code:
-        raise HTTPException(status_code=404, detail="상품을 찾을 수 없습니다.")
-
-    # 2️⃣ 리뷰 크롤링
-    reviews_result = await run_in_threadpool(ElevenStScraperAdapter.crawl_11st_reviews, int(product_code))
-    if "error" in reviews_result:
-        raise HTTPException(status_code=500, detail=reviews_result["error"])
-
-    review_texts = [r["content"] for r in reviews_result["reviews"]]
-
-    # 3️⃣ SentimentAnalyzer로 속성별 점수 계산
-    senti = SentimentAnalyzer()
-    attr_summary = {}
-    for text in review_texts:
-        attrs, score = senti.analyze_text(text)
-        for k, v in attrs.items():
-            attr_summary[k] = attr_summary.get(k, 0) + (v if score >= 0 else -v)
-
-    negative_attrs = [k for k, v in attr_summary.items() if v < 0]
-
-    # 4️⃣ LLM 호출 → 개선점 생성
-    llm = LLMAdapter()
-    improvements = llm.generate_improvements(req.product_name, negative_attrs)
-
-    return {
-        "product_name": req.product_name,
-        "reviews_count": len(reviews_result["reviews"]),
-        "negative_attrs": negative_attrs,
-        "improvements": improvements
-    }

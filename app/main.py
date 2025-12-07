@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from config.database.session import Base, engine
 
 from samsam_board.adapter.input.web.samsam_board_router import samsam_board_router
-
+from product_analysis.adapter.input.web.product_router import product_router
 
 load_dotenv()
 
@@ -28,7 +28,7 @@ app.add_middleware(
 )
 
 app.include_router(samsam_board_router, prefix="/board")
-
+app.include_router(product_router, prefix="/product")
 
 # 앱 실행
 if __name__ == "__main__":
