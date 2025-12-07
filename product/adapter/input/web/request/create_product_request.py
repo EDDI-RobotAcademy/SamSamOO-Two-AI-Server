@@ -1,5 +1,3 @@
-# product_analysis/adapter/input/web/request/create_product_request.py
-
 from pydantic import BaseModel, Field
 from typing import Optional
 from product_analysis.domain.entity.product import Platform
