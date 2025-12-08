@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 class ProductResponse(BaseModel):
-    source_product_id: int
+    source_product_id: str
     source: str
     title: str
     category: str

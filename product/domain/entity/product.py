@@ -46,6 +46,7 @@ class AnalysisStatus(Enum):
 class Platform(Enum):
     ELEVENST = "elevenst"
     GMARKET = "gmarket"
+    LOTTEON = "lotteon"
 
     @classmethod
     def from_string(cls, value: str):
