@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from config.database.session import Base, engine
+from social_oauth.adapter.input.web.google_oauth2_router import authentication_router
 from config.env_loader import load_env
 
 from review.adapter.input.web.review_router import review_router
@@ -28,6 +29,8 @@ app.add_middleware(
     allow_headers=["*"],         # 모든 헤더 허용
 )
 
+# Router 등록
+app.include_router(authentication_router, prefix="/authentication")
 app.include_router(review_router, prefix="/review")
 app.include_router(product_router, prefix="/product")
 
