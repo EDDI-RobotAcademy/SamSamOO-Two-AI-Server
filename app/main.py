@@ -5,6 +5,7 @@ from config.env_loader import load_env
 from product_analysis.adapter.input.web.product_analysis_router import analysis_router
 from review.adapter.input.web.review_router import review_router
 from product.adapter.input.web.product_router import product_router
+from dashboard.adapter.input.web.dashboard_router import dashboard_router
 
 load_env()
 
@@ -33,6 +34,7 @@ app.include_router(authentication_router, prefix="/authentication")
 app.include_router(review_router, prefix="/review")
 app.include_router(product_router, prefix="/product")
 app.include_router(analysis_router, prefix="/analysis")
+app.include_router(dashboard_router, prefix="/dashboard")
 
 # 앱 실행
 if __name__ == "__main__":
