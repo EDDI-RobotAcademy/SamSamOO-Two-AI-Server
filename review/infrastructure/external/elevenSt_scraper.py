@@ -128,10 +128,7 @@ class ElevenStScraperAdapter(ScraperPort):
                     print(f"[FATAL ERROR] iframe ({IFRAME_SELECTOR})을 찾지 못했습니다.")
                     return {"error": "iframe 전환 실패"}
 
-                # 6. '리뷰 더보기' 버튼 반복 클릭 루프 (모든 리뷰 로드)
                 while True:
-                    print(f">>> 리뷰 로딩 중... (현재 수집된 리뷰 수: {len(all_reviews)}개)")
-
                     try:
                         more_button = review_frame_locator.locator(LOAD_MORE_BUTTON_SELECTOR)
 

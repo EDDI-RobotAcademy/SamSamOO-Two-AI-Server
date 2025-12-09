@@ -1,23 +1,17 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 
+from account.adapter.input.web.request.signup_request import SignupRequest
 from account.application.usecase.account_usecase import AccountUseCase
 from account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl
 
 
-router = APIRouter(prefix="/account", tags=["account"])
+account_router = APIRouter(tags=["account"])
 
 repo = AccountRepositoryImpl()
 account_usecase = AccountUseCase(repo)
 
 
-class SignupRequest(BaseModel):
-    email: str
-    nickname: str
-    terms_agreed: bool
-
-
-@router.post("/signup")
+@account_router.post("/signup")
 async def signup(req: SignupRequest):
 
     if not req.terms_agreed:
