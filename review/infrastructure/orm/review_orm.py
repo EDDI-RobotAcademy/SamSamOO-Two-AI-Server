@@ -1,3 +1,5 @@
+from typing import Dict, Any
+
 from sqlalchemy import (
     Column, String, Integer, Float, DateTime, Text,
     ForeignKeyConstraint, PrimaryKeyConstraint
@@ -37,3 +39,14 @@ class ReviewORM(Base):
 
     # ProductORM relationship
     product = relationship("ProductORM", backref="reviews")
+
+    def to_review_data(self) -> Dict[str, Any]:
+        """ORM 객체를 도메인에서 사용하는 ReviewData 딕셔너리로 변환"""
+        return {
+            "source": self.source,
+            "source_product_id": self.source_product_id,
+            "review_id": self.review_id,
+            "text": self.content,  # content 필드를 'text'로 매핑
+            "rating": self.rating,
+            # 기타 필요한 필드 매핑
+        }
