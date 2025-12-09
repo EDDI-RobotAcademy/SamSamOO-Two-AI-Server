@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query,Depends
 from typing import List
 
 from product.domain.entity.product import Product, Platform
@@ -6,7 +6,7 @@ from product.application.usecase.product_usecase import ProductUseCase
 from product.infrastructure.repository.product_repository_impl import ProductRepositoryImpl
 from product.adapter.input.web.request.create_product_request import ProductCreateRequest
 from product.adapter.input.web.response.product_response import ProductResponse
-
+from config.helpers.utils.redis_utils import get_current_user_id
 
 _product_repo = ProductRepositoryImpl()
 product_uc = ProductUseCase(_product_repo)
@@ -18,11 +18,8 @@ product_router = APIRouter(tags=["product"])
 # 1. 상품 생성 (UC-1 반영: source_product_id 전달 수정)
 # ----------------------------------------------------------------------
 @product_router.post("/create", response_model=ProductResponse)
-def create_product(req: ProductCreateRequest):
+def create_product(req: ProductCreateRequest, seller_id: int = Depends(get_current_user_id)):
     """새 상품 정보를 저장합니다. (Full Path: /products/create)"""
-
-    # 🚨 seller_id는 인증 시스템에서 가져와야 하지만, 임시로 1을 사용합니다.
-    SELLER_ID = 1
 
     new_product = Product.create(
         source=req.source,
@@ -30,7 +27,7 @@ def create_product(req: ProductCreateRequest):
         title=req.title,
         source_url=req.source_url,  # DTO의 url을 source_url로 전달
         price=req.price,
-        seller_id=SELLER_ID,
+        seller_id=seller_id,
         category=req.category,
     )
 
