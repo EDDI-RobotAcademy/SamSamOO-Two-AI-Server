@@ -24,14 +24,14 @@ def create_product(req: ProductCreateRequest):
     # 🚨 seller_id는 인증 시스템에서 가져와야 하지만, 임시로 1을 사용합니다.
     SELLER_ID = 1
 
-    # ⭐️ 수정: source_product_id를 Product.create에 올바르게 전달 ⭐️
     new_product = Product.create(
         source=req.source,
         source_product_id=req.source_product_id,
         title=req.title,
         source_url=req.source_url,  # DTO의 url을 source_url로 전달
         price=req.price,
-        seller_id=SELLER_ID,  # ⭐️ 판매자 ID 전달
+        seller_id=SELLER_ID,
+        category=req.category,
     )
 
     try:
@@ -98,6 +98,7 @@ def update_product(req: ProductCreateRequest):
     existing_product.title = req.title
     existing_product.source_url = req.source_url
     existing_product.price = req.price
+    existing_product.category = req.category
 
     try:
         updated_product = product_uc.update_product(existing_product)

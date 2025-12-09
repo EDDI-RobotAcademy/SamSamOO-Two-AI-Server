@@ -14,6 +14,14 @@ class ProductORM(Base):
 
     seller_id = Column(Integer, nullable=False)
 
+    # ⭐️ 새로 추가된 필드 1: category ⭐️
+    # Enum 값 (예: 'ETC', 'FOOD')을 저장하며, 길이는 Enum 값 최대 길이보다 넉넉하게 설정
+    category = Column(String(50), nullable=False, default='ETC')
+
+    # ⭐️ 새로 추가된 필드 2: analysis_status ⭐️
+    # Enum 값 (예: 'PENDING', 'COMPLETED')을 저장
+    analysis_status = Column(String(50), nullable=False, default='PENDING')
+
     price = Column(Integer, nullable=True)
     seller = Column(String(255), nullable=True)
     rating = Column(Float, nullable=True)
