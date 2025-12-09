@@ -1,9 +1,21 @@
+# product_analysis/application/port/llm_analysis_port.py
+
 from abc import ABC, abstractmethod
-from typing import Optional, List
-from product_analysis.application.port.llm_analysis_port import ReviewData, AnalysisMetricsData, AnalysisSummaryData
+from typing import Optional, Dict, Any, List
+
+
+# 🚨 LLM 분석 실패를 알리는 커스텀 예외 추가
+class LLMAnalysisFailure(Exception):
+    """LLM API 호출 또는 결과 파싱 실패 시 발생하는 예외."""
+    pass
+
+
+ReviewData = Dict[str, Any]
+AnalysisMetricsData = Dict[str, Any]
+AnalysisSummaryData = Dict[str, Any]
+
 
 class AnalysisRepositoryPort(ABC):
-
     # 1. 리뷰 데이터 조회
     @abstractmethod
     def get_reviews_by_product_source_id(self, source: str, source_product_id: str, limit: int = 100) -> List[
@@ -42,4 +54,15 @@ class AnalysisRepositoryPort(ABC):
     @abstractmethod
     def get_insight_summary(self, job_id: str) -> Optional[AnalysisSummaryData]:
         """Job ID로 최종 요약(Summary) 결과를 조회합니다."""
+        raise NotImplementedError
+
+
+class LLMAnalysisPort(ABC):
+    # (LLMAnalysisPort의 정의가 누락되어 있지만, 이 클래스에 LLM 관련 예외를 포함하는 것이 좋습니다.)
+    @abstractmethod
+    def extract_job_metrics(self, review_texts: List[str], product_id: str) -> Dict[str, Any]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def generate_final_summary(self, review_texts: List[str], metrics_data: Dict[str, Any]) -> Dict[str, Any]:
         raise NotImplementedError

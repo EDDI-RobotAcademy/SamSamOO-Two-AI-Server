@@ -1,9 +1,8 @@
 import os
-from dotenv import load_dotenv
 from config.database.session import Base, engine
 from social_oauth.adapter.input.web.google_oauth2_router import authentication_router
 from config.env_loader import load_env
-
+from product_analysis.adapter.input.web.product_analysis_router import analysis_router
 from review.adapter.input.web.review_router import review_router
 from product.adapter.input.web.product_router import product_router
 
@@ -33,6 +32,7 @@ app.add_middleware(
 app.include_router(authentication_router, prefix="/authentication")
 app.include_router(review_router, prefix="/review")
 app.include_router(product_router, prefix="/product")
+app.include_router(analysis_router, prefix="/analysis")
 
 # 앱 실행
 if __name__ == "__main__":

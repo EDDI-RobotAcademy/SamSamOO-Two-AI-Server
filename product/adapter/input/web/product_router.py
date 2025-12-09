@@ -8,7 +8,6 @@ from product.adapter.input.web.request.create_product_request import ProductCrea
 from product.adapter.input.web.response.product_response import ProductResponse
 
 
-# ⭐️ 의존성 주입을 위한 임시 설정 (실제 프로젝트에서는 Depends 사용 권장)
 _product_repo = ProductRepositoryImpl()
 product_uc = ProductUseCase(_product_repo)
 
