@@ -1,11 +1,13 @@
 import os
-from dotenv import load_dotenv
 from config.database.session import Base, engine
+from social_oauth.adapter.input.web.google_oauth2_router import authentication_router
+from config.env_loader import load_env
+from product_analysis.adapter.input.web.product_analysis_router import analysis_router
+from review.adapter.input.web.review_router import review_router
+from product.adapter.input.web.product_router import product_router
+from dashboard.adapter.input.web.dashboard_router import dashboard_router
 
-from samsam_board.adapter.input.web.samsam_board_router import samsam_board_router
-
-
-load_dotenv()
+load_env()
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 os.environ["TORCH_USE_CUDA_DSA"] = "1"
@@ -27,8 +29,12 @@ app.add_middleware(
     allow_headers=["*"],         # 모든 헤더 허용
 )
 
-app.include_router(samsam_board_router, prefix="/board")
-
+# Router 등록
+app.include_router(authentication_router, prefix="/authentication")
+app.include_router(review_router, prefix="/review")
+app.include_router(product_router, prefix="/product")
+app.include_router(analysis_router, prefix="/analysis")
+app.include_router(dashboard_router, prefix="/dashboard")
 
 # 앱 실행
 if __name__ == "__main__":
