@@ -8,6 +8,7 @@ class AccountUseCase:
     def __init__(self, account_repository: AccountRepositoryPort):
         self.repo = account_repository
 
+    # OAuth용 (자동 생성)
     def create_or_get_account(self, email: str, nickname: str | None):
         account = self.repo.find_by_email(email)
         if account:
@@ -18,6 +19,12 @@ class AccountUseCase:
             nickname = f"anonymous{total + 1}"
 
         account = Account(email=email, nickname=nickname)
+        return self.repo.save(account)
+
+    # 회원가입용 (약관 검증 후 생성)
+    def create(self, email: str, nickname: str, terms_agreed: bool):
+        account = Account(email=email, nickname=nickname)
+        account.terms_agreed = terms_agreed
         return self.repo.save(account)
 
     def get_account_by_id(self, account_id: int) -> Optional[Account]:

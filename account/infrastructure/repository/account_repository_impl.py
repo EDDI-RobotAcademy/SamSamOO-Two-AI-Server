@@ -1,4 +1,5 @@
 from typing import List
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 from account.application.port.account_repository_port import AccountRepositoryPort
@@ -37,6 +38,8 @@ class AccountRepositoryImpl(AccountRepositoryPort):
         account.id = orm_account.id
         account.created_at = orm_account.created_at
         account.updated_at = orm_account.updated_at
+        account.terms_agreed = orm_account.terms_agreed
+        account.terms_agreed_at = orm_account.terms_agreed_at
         return account
 
     def find_all_by_id(self, ids: list[int]) -> List[Account]:
@@ -52,3 +55,9 @@ class AccountRepositoryImpl(AccountRepositoryPort):
 
     def count(self) -> int:
         return self.db.query(AccountORM).count()
+
+    def update_terms_agreed(self, user_id: int):
+        account = self.db.query(AccountORM).filter(AccountORM.id == user_id).first()
+        account.terms_agreed = True
+        account.terms_agreed_at = datetime.utcnow()
+        self.db.commit()

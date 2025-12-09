@@ -1,7 +1,8 @@
 import json
 import uuid
-from fastapi import APIRouter, Response, Request, Cookie
+from fastapi import APIRouter, Response, Request, Cookie, HTTPException
 from fastapi.responses import RedirectResponse
+from datetime import datetime
 
 from account.application.usecase.account_usecase import AccountUseCase
 from account.infrastructure.repository.account_repository_impl import AccountRepositoryImpl
@@ -59,8 +60,14 @@ async def process_google_redirect(
         ex=6 * 60 * 60  # 6시간
     )
 
-    # HTTP-only 쿠키 발급
-    redirect_response = RedirectResponse("http://localhost:3000")
+    # 약관 동의 여부에 따라 리다이렉트 분기
+    print("[DEBUG] terms_agreed:", account.terms_agreed)
+    if not account.terms_agreed:
+        redirect_url = "http://localhost:3000/terms"
+    else:
+        redirect_url = "http://localhost:3000"
+
+    redirect_response = RedirectResponse(redirect_url)
     redirect_response.set_cookie(
         key="session_id",
         value=session_id,
@@ -108,7 +115,8 @@ async def auth_status(request: Request, session_id: str | None = Cookie(None)):
         "logged_in": True,
         "user_id": account.id,
         "email": account.email,
-        "nickname": account.nickname
+        "nickname": account.nickname,
+        "terms_agreed": account.terms_agreed
     }
 
 @authentication_router.post("/logout")
@@ -126,3 +134,40 @@ async def logout(response: Response, session_id: str | None = Cookie(None)):
 
     return {"message": "logged out"}
 
+@authentication_router.post("/agree-terms")
+async def agree_terms(session_id: str | None = Cookie(None)):
+    if not session_id:
+        raise HTTPException(401, "Not logged in")
+
+    data = redis_client.get(f"session:{session_id}")
+    if not data:
+        raise HTTPException(401, "Session expired")
+
+    user = json.loads(data)
+    user_id = user["user_id"]
+
+    # 강제 DB 업데이트
+    account_repository.update_terms_agreed(user_id)
+
+    return {"message": "ok"}
+
+@authentication_router.get("/me")
+async def me(session_id: str | None = Cookie(None)):
+    if not session_id:
+        raise HTTPException(401)
+
+    data = redis_client.get(f"session:{session_id}")
+    if not data:
+        raise HTTPException(401)
+
+    user = json.loads(data)
+    user_id = user["user_id"]
+
+    account = account_repository.find_all_by_id([user_id])[0]
+
+    return {
+        "id": account.id,
+        "email": account.email,
+        "nickname": account.nickname,
+        "terms_agreed": account.terms_agreed
+    }
