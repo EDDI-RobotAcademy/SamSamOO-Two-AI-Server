@@ -45,7 +45,6 @@ class AnalysisStatus(Enum):
 # --- 기존 Enum 정의 (유지) ---
 class Platform(Enum):
     ELEVENST = "elevenst"
-    GMARKET = "gmarket"
     LOTTEON = "lotteon"
 
     @classmethod

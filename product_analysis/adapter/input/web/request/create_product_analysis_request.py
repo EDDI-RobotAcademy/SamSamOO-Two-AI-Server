@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field
 from enum import Enum
 
 class Provider(str, Enum):
-    gmarket = "gmarket"
     elevenst = "elevenst"
+    lotteon = "lotteon"
     # naver = "naver"
     # coupang = "coupang"
 

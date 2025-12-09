@@ -5,7 +5,6 @@ from enum import Enum
 
 class ReviewPlatform(Enum):
     ELEVENST = "elevenst"
-    GMARKET = "gmarket"
     LOTTEON = "lotteon"
     @classmethod
     def from_string(cls, value: str):
