@@ -29,6 +29,9 @@ class ReviewRepositoryImpl(ReviewRepositoryPort):
         self.db.bulk_save_objects(orm_rows)
         self.db.commit()
 
+    def save(self, review: Review) -> None:
+        """단일 리뷰 저장"""
+        self.save_all([review])
     def find_by_product_id(self, product_id: str, platform: str) -> List[Review]:
         """
         특정 상품 ID와 플랫폼에 해당하는 모든 리뷰를 DB에서 조회하여 Review 엔티티로 반환합니다.
