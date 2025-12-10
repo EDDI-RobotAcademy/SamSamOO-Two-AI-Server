@@ -21,7 +21,7 @@ from product_analysis.infrastructure.external.llm_adapter_impl import LLMAdapter
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "YOUR_FALLBACK_KEY")
 
 
-@celery_app.task(bind=True)
+@celery_app.task(bind=True, name="review.start_crawl")
 def start_review_crawl_task(self, platform: str, source_product_id: str):
     """[순서 1] 리뷰를 크롤링하고 'Review' 테이블에 저장합니다."""
 
@@ -57,7 +57,7 @@ def start_review_crawl_task(self, platform: str, source_product_id: str):
         session.close()
 
 
-@celery_app.task(bind=True)
+@celery_app.task(bind=True, name="analysis.start")
 def start_review_analysis_task(self, previous_result: dict):
     """[순서 2] 크롤링된 리뷰를 분석하고 'Review Analysis' 테이블에 저장합니다."""
 
