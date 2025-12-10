@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config.database.session import Base, engine
 from samsam_board.adapter.input.web.samsam_board_router import samsam_board_router
-from samsam_naver.adapter.naver_router import router as naver_router
+from samsam_danawa.adapter.danawa_router import router as danawa_router
 
 load_dotenv()
 
@@ -25,7 +25,7 @@ app.add_middleware(
 )
 
 # Router 등록
-app.include_router(naver_router, prefix="/market-data")
+app.include_router(danawa_router, prefix="/market")
 app.include_router(samsam_board_router, prefix="/board")
 
 
