@@ -1,46 +1,33 @@
-from fastapi import APIRouter
-
-from product.domain.entity.product import Product
-from review.adapter.input.web.response.crawl_review_response import ReviewFetchResponse, ReviewItem  # ReviewItem 추가
-from review.application.usecase.fetch_review_usecase import FetchReviewsUseCase
-from review.application.port.scraper_factory import get_scraper_adapter
-from review.infrastructure.repository.review_repository_impl import ReviewRepositoryImpl
+from fastapi import APIRouter, status
+from app.tasks.tasks import start_review_crawl_task
+from review.adapter.input.web.response.task_start_response import TaskStartResponse
 from review.adapter.input.web.request.crawl_review_request import FetchReviewsRequest
-
-_review_repo = ReviewRepositoryImpl()
 
 review_router = APIRouter(tags=["review"])
 
+@review_router.post(
+    "/collect/start",
+    response_model=TaskStartResponse,
+    status_code=status.HTTP_202_ACCEPTED
+)
+def fetch_reviews(
+    req: FetchReviewsRequest,
+):
+    platform = req.platform
+    product_id = str(req.product_id)
 
-@review_router.post("/crawl", response_model=ReviewFetchResponse)
-def fetch_reviews(req: FetchReviewsRequest):
-    # 팩토리 함수를 사용하여 요청(req.platform) 값에 맞는 어댑터를 동적으로 가져옵니다.
-    _scraper_adapter = get_scraper_adapter(req.platform)
-
-    review_uc = FetchReviewsUseCase(_scraper_adapter, _review_repo)
-
-    product = Product.create_for_crawl_request(
-        platform=req.platform,
-        product_id=str(req.product_id)
+    # ⭐️⭐️⭐️ 1. Celery Task를 호출하고 즉시 응답 ⭐️⭐️⭐️
+    task = start_review_crawl_task.delay(
+        platform=platform,
+        source_product_id=product_id
     )
 
-    reviews = review_uc.execute(product)
-
-    review_items = []
-    product_name = "N/A"
-
-    for r in reviews:
-        review_items.append(ReviewItem(
-            reviewer=r.reviewer,
-            rating=r.rating,
-            content=r.content,
-            review_at=r.review_at
-        ))
-
-    return ReviewFetchResponse(
-        product_name=product_name,
-        platform=req.platform,
-        product_id=req.product_id,
-        review_count=len(reviews),
-        reviews=review_items
+    # 2. 비동기 작업 수락 응답 반환
+    return TaskStartResponse(
+        task_id=task.id,
+        platform=platform,
+        product_id=product_id,
+        message="Review crawling task successfully started.",
+        # ⭐️ 프론트엔드가 폴링해야 할 URL ⭐️
+        polling_url=f"/review/collect/status/{platform}/{product_id}"
     )

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Index
 from datetime import datetime
 from config.database.session import Base
-
+from sqlalchemy.orm import relationship
 
 class ProductORM(Base):
     __tablename__ = 'products'
@@ -32,3 +32,5 @@ class ProductORM(Base):
     __table_args__ = (
         Index('title_fulltext_idx', 'title', mysql_prefix='FULLTEXT'),
     )
+
+    reviews = relationship("ReviewORM", back_populates="product", cascade="all, delete-orphan")

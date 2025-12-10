@@ -7,6 +7,8 @@ from product.infrastructure.repository.product_repository_impl import ProductRep
 from product.adapter.input.web.request.create_product_request import ProductCreateRequest
 from product.adapter.input.web.response.product_response import ProductResponse
 from config.helpers.utils.redis_utils import get_current_user_id
+from app.tasks.tasks import start_review_crawl_task, start_review_analysis_task
+from celery import chain
 
 _product_repo = ProductRepositoryImpl()
 product_uc = ProductUseCase(_product_repo)
@@ -19,7 +21,7 @@ product_router = APIRouter(tags=["product"])
 # ----------------------------------------------------------------------
 @product_router.post("/create", response_model=ProductResponse)
 def create_product(req: ProductCreateRequest, seller_id: int = Depends(get_current_user_id)):
-    """새 상품 정보를 저장합니다. (Full Path: /products/create)"""
+    """새 상품 정보를 저장하고, 비동기 리뷰 크롤링 및 분석 체인을 시작합니다."""
 
     new_product = Product.create(
         source=req.source,
@@ -33,7 +35,23 @@ def create_product(req: ProductCreateRequest, seller_id: int = Depends(get_curre
 
     try:
         saved_product = product_uc.create_product(new_product)
+
+        # 1. Celery Task Chain 정의: 크롤링 -> 분석 순서로 연결
+        task_chain = chain(
+            # Task 1: 크롤링 시작 (플랫폼과 상품 ID를 인자로 넘김)
+            start_review_crawl_task.s(
+                platform=req.source,
+                source_product_id=saved_product.source_product_id
+            ),
+            # Task 2: 분석 시작 (Task 1의 결과 Dict를 인자로 자동 전달받음)
+            start_review_analysis_task.s()
+        )
+
+        # 2. 체인 실행 (큐에 비동기로 작업 메시지를 보냄)
+        task_chain.apply_async()
+
         return ProductResponse(**saved_product.__dict__)
+
     except Exception as e:
         # 중복 등록 또는 DB 오류 처리
         raise HTTPException(status_code=400, detail=str(e))

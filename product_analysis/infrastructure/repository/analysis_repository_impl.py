@@ -2,8 +2,6 @@ from typing import List, Optional
 import uuid
 
 from sqlalchemy.exc import NoResultFound
-
-from config.database.session import get_db_session
 from sqlalchemy.orm import Session
 
 from product_analysis.infrastructure.orm.analysis_job_orm import AnalysisJobORM
@@ -16,8 +14,8 @@ from product_analysis.application.port.analysis_repository_port import (
 
 
 class ReviewAnalysisRepositoryImpl(AnalysisRepositoryPort):
-    def __init__(self):
-        self.db: Session = get_db_session()
+    def __init__(self, session: Session):
+        self.db: Session = session
 
     # ------------------ 1. 리뷰 데이터 조회 (ReviewORM 사용) ------------------
     def get_reviews_by_product_source_id(self, source: str, source_product_id: str, limit: int = 100) -> List[
