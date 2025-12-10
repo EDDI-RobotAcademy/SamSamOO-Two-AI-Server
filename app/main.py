@@ -1,6 +1,7 @@
 import os
 
 from config.database.session import Base, engine
+from samsam_danawa.adapter.danawa_router import router as danawa_router
 from social_oauth.adapter.input.web.google_oauth2_router import authentication_router
 from config.env_loader import load_env
 from product_analysis.adapter.input.web.product_analysis_router import analysis_router
@@ -33,6 +34,9 @@ app.add_middleware(
 )
 
 # Router 등록
+
+
+app.include_router(danawa_router, prefix="/market", tags=["Danawa"])
 app.include_router(authentication_router, prefix="/authentication")
 app.include_router(review_router, prefix="/review")
 app.include_router(product_router, prefix="/product")
