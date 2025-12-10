@@ -1,6 +1,5 @@
 from typing import List
 
-from config.database.session import get_db_session
 from review.application.port.review_repository_port import ReviewRepositoryPort
 from review.domain.entity.review import Review, ReviewPlatform
 from sqlalchemy.orm import Session
@@ -8,16 +7,16 @@ from review.infrastructure.orm.review_orm import ReviewORM
 from sqlalchemy import select
 
 class ReviewRepositoryImpl(ReviewRepositoryPort):
-    def __init__(self):
-        self.db: Session = get_db_session()
+    def __init__(self, session: Session):
+        self.db: Session = session
 
-    def save_all(self, reviews: List[Review]) -> None:
+    def save_all(self, reviews: List[Review], source: str, source_product_id: str) -> None:
         orm_rows = []
 
         for r in reviews:
             row = ReviewORM(
-                source=r.platform.value,
-                source_product_id=r.product_id,
+                source=source,
+                source_product_id=source_product_id,
                 reviewer=r.reviewer,
                 rating=r.rating,
                 content=r.content,
@@ -27,7 +26,6 @@ class ReviewRepositoryImpl(ReviewRepositoryPort):
             orm_rows.append(row)
 
         self.db.bulk_save_objects(orm_rows)
-        self.db.commit()
 
     def save(self, review: Review) -> None:
         """단일 리뷰 저장"""

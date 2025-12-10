@@ -1,6 +1,6 @@
 from typing import List
 
-from product.domain.entity.product import Product
+from product.domain.entity.product import Product, Platform
 from review.application.port.scraper_port import ScraperPort
 from review.application.port.review_repository_port import ReviewRepositoryPort
 from review.domain.entity.review import Review
@@ -12,11 +12,18 @@ class FetchReviewsUseCase:
         self.scraper = scraper
         self.repository = repository
 
-    # ⭐️ limit 파라미터 제거
     def execute(self, product: Product) -> List[Review]:
 
-        # ⭐️ limit 없이 모든 리뷰를 요청
         reviews = self.scraper.fetch_reviews(product)
 
-        self.repository.save_all(reviews)
+        if isinstance(product.source, Platform):
+            source_value = product.source.value
+        else:
+            source_value = str(product.source)
+
+        self.repository.save_all(
+            reviews,
+            source=source_value,
+            source_product_id=product.source_product_id
+        )
         return reviews
