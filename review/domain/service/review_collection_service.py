@@ -1,7 +1,7 @@
 from typing import List
 from review.domain.entity.review import Review
 from review.domain.entity.crawling_status import CrawlingStatus
-from review.infrastructure.repository.crawling_status_repository import CrawlingStatusRepository
+from review.infrastructure.repository.crawling_status_repository_impl import CrawlingStatusRepositoryImpl
 from product.domain.entity.product import Product
 
 
@@ -12,7 +12,7 @@ class ReviewCollectionService:
             self,
             scraper,  # ScraperPort
             review_repository,  # ReviewRepository
-            status_repository: CrawlingStatusRepository  # ⭐️ DB Repository
+            status_repository: CrawlingStatusRepositoryImpl
     ):
         self.scraper = scraper
         self.review_repository = review_repository

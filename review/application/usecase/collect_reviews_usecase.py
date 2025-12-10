@@ -4,7 +4,7 @@ from product.domain.entity.product import Product
 from review.domain.service.review_collection_service import ReviewCollectionService
 from review.application.port.scraper_port import ScraperPort
 from review.infrastructure.repository.review_repository_impl import ReviewRepositoryImpl
-from review.infrastructure.repository.crawling_status_repository import CrawlingStatusRepository
+from review.infrastructure.repository.crawling_status_repository_impl import CrawlingStatusRepositoryImpl
 
 
 class CollectReviewsUseCase:
@@ -14,7 +14,7 @@ class CollectReviewsUseCase:
         self,
         scraper: ScraperPort,
         review_repository: ReviewRepositoryImpl,
-        status_repository: CrawlingStatusRepository
+        status_repository: CrawlingStatusRepositoryImpl
     ):
         self.collection_service = ReviewCollectionService(
             scraper=scraper,
@@ -30,7 +30,7 @@ class CollectReviewsUseCase:
 class GetCollectionStatusUseCase:
     """수집 상태 조회 유스케이스"""
 
-    def __init__(self, status_repository: CrawlingStatusRepository):
+    def __init__(self, status_repository: CrawlingStatusRepositoryImpl):
         self.status_repository = status_repository
 
     def execute(self, product_id: str):
