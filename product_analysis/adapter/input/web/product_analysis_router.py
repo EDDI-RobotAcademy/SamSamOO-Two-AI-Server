@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 import os
+import traceback
 
 from product_analysis.adapter.input.web.response.analysis_response import (
     AnalysisRunResponse,
@@ -12,6 +13,7 @@ from product_analysis.application.usecase.analyze_product_usecase import Product
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "YOUR_FALLBACK_KEY")
 
+_analysis_repo = ReviewAnalysisRepositoryImpl()
 analysis_router = APIRouter(tags=["analysis"])
 
 
@@ -23,15 +25,13 @@ analysis_router = APIRouter(tags=["analysis"])
     response_model=AnalysisRunResponse
 )
 def run_analysis_for_product(source: str, source_product_id: str):
-
-    # 필요한 인프라스트럭처 인스턴스 생성
-    repo = ReviewAnalysisRepositoryImpl()
+    # LLM 어댑터 생성
     llm = LLMAdapterImpl(api_key=OPENAI_API_KEY)
 
     # 도메인 서비스 생성
     analysis_service = ReviewAnalysisService(
         llm_port=llm,
-        analysis_repo=repo
+        analysis_repo=_analysis_repo
     )
 
     # Usecase 생성
@@ -72,12 +72,8 @@ def run_analysis_for_product(source: str, source_product_id: str):
     response_model=AnalysisResultsResponse
 )
 def get_analysis_results(job_id: str):
-
-    # 인프라스트럭처 → Repository만 필요
-    repo = ReviewAnalysisRepositoryImpl()
-
-    metrics_data = repo.get_analysis_metrics(job_id)
-    summary_data = repo.get_insight_summary(job_id)
+    metrics_data = _analysis_repo.get_analysis_metrics(job_id)
+    summary_data = _analysis_repo.get_insight_summary(job_id)
 
     if not metrics_data and not summary_data:
         raise HTTPException(
@@ -90,3 +86,41 @@ def get_analysis_results(job_id: str):
         metrics=metrics_data,
         summary=summary_data
     )
+
+
+@analysis_router.get("/{source}/{product_id}/latest")
+def get_latest_analysis(source: str, product_id: str):
+    """최신 분석 결과 조회"""
+
+    print(f"[INFO] 최신 분석 결과 조회: {source} / {product_id}")
+
+    try:
+        # ⭐️ Repository를 통해 조회
+        analysis_result = _analysis_repo.get_latest_analysis_by_product(
+            source=source,
+            product_id=product_id
+        )
+
+        if not analysis_result:
+            print(f"[INFO] 분석 결과 없음: {source} / {product_id}")
+            raise HTTPException(status_code=404, detail="분석 결과가 없습니다")
+
+        job_id = analysis_result.get("job_id")
+        print(f"[INFO] 분석 결과 발견: job_id={job_id}")
+
+        # ⭐️ Repository를 통해 인사이트 조회
+        insight_result = _analysis_repo.get_latest_insight_by_job_id(job_id)
+
+        print(f"[SUCCESS] 분석 결과 반환 완료")
+
+        return {
+            "analysis_result": analysis_result,
+            "insight_result": insight_result
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] 분석 결과 조회 실패: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

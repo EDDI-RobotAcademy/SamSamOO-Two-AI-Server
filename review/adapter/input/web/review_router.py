@@ -1,8 +1,9 @@
-from fastapi import APIRouter, BackgroundTasks
+import traceback
 
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from product.domain.entity.product import Product
 from review.adapter.input.web.request.collect_review_request import CollectReviewsRequest, CollectionStatusResponse
-from review.adapter.input.web.response.crawl_review_response import ReviewFetchResponse, ReviewItem  # ReviewItem 추가
+from review.adapter.input.web.response.crawl_review_response import ReviewFetchResponse, ReviewItem
 from review.application.usecase.collect_reviews_usecase import GetCollectionStatusUseCase, CollectReviewsUseCase
 from review.application.usecase.fetch_review_usecase import FetchReviewsUseCase
 from review.application.port.scraper_factory import get_scraper_adapter
@@ -137,3 +138,48 @@ def get_collection_status(product_id: str):
             error_message=str(e),
             total_reviews=None
         )
+
+
+#  리뷰 목록 조회
+@review_router.get("/list")
+def get_review_list(source: str, source_product_id: str, limit: int = 10, offset: int = 0):
+    """리뷰 목록 조회"""
+
+    print(f"[INFO] 리뷰 목록 조회: {source} / {source_product_id}, limit={limit}, offset={offset}")
+
+    try:
+        # Repository에서 리뷰 조회
+        reviews = _review_repo.find_by_product_id(
+            product_id=source_product_id,
+            platform=source
+        )
+
+        print(f"[INFO] 총 {len(reviews)}개 리뷰 조회됨")
+
+        # 페이징 적용
+        total_count = len(reviews)
+        paged_reviews = reviews[offset:offset + limit]
+
+        # 응답 DTO 변환
+        review_items = []
+        for r in paged_reviews:
+            review_items.append({
+                "review_id": getattr(r, 'review_id', 0),
+                "reviewer": r.reviewer,
+                "rating": r.rating,
+                "content": r.content,
+                "review_at": r.review_at.isoformat() if r.review_at else None
+            })
+
+        return {
+            "total": total_count,
+            "limit": limit,
+            "offset": offset,
+            "reviews": review_items
+        }
+
+    except Exception as e:
+        print(f"[ERROR] 리뷰 목록 조회 실패: {e}")
+        traceback.print_exc()
+
+        raise HTTPException(status_code=500, detail=str(e))

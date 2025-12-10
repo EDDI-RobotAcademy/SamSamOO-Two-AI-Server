@@ -1,7 +1,9 @@
 from typing import List, Optional
 import uuid
+import json
 
 from sqlalchemy.exc import NoResultFound
+from sqlalchemy import text
 
 from config.database.session import get_db_session
 from sqlalchemy.orm import Session
@@ -105,3 +107,79 @@ class ReviewAnalysisRepositoryImpl(AnalysisRepositoryPort):
         """Summary 데이터를 조회합니다."""
         summary_orm = self.db.query(InsightResultORM).filter_by(job_id=job_id).first()
         return summary_orm.to_summary_data() if summary_orm else None
+
+    # ⭐️ ------------------ 5. 추가: 최신 분석 결과 조회 ------------------
+    def get_latest_analysis_by_product(self, source: str, product_id: str) -> Optional[dict]:
+        """상품별 최신 분석 결과 조회"""
+        try:
+            print(f"[REPO] 최신 분석 결과 조회: {source} / {product_id}")
+
+            query = text("""
+                SELECT ar.* 
+                FROM analysis_result ar
+                INNER JOIN analysis_jobs aj ON ar.job_id = aj.id
+                WHERE aj.source = :source AND aj.source_product_id = :product_id
+                ORDER BY ar.created_at DESC
+                LIMIT 1
+            """)
+
+            row = self.db.execute(
+                query,
+                {"source": source, "product_id": product_id}
+            ).fetchone()
+
+            if not row:
+                print(f"[REPO] 분석 결과 없음")
+                return None
+
+            print(f"[REPO] 분석 결과 발견: job_id={row.job_id}")
+
+            return {
+                "job_id": row.job_id,
+                "total_reviews": row.total_reviews,
+                "sentiment_json": json.loads(row.sentiment_json) if row.sentiment_json else None,
+                "aspects_json": json.loads(row.aspects_json) if row.aspects_json else None,
+                "keywords_json": json.loads(row.keywords_json) if row.keywords_json else [],
+                "issues_json": json.loads(row.issues_json) if row.issues_json else [],
+                "trend_json": json.loads(row.trend_json) if row.trend_json else None,
+                "created_at": row.created_at.isoformat() if row.created_at else None
+            }
+
+        except Exception as e:
+            print(f"[REPO ERROR] 최신 분석 결과 조회 실패: {e}")
+            self.db.rollback()
+            return None
+
+    def get_latest_insight_by_job_id(self, job_id: str) -> Optional[dict]:
+        """job_id로 최신 인사이트 조회"""
+        try:
+            print(f"[REPO] 인사이트 조회: job_id={job_id}")
+
+            query = text("""
+                SELECT * FROM insight_result 
+                WHERE job_id = :job_id
+                ORDER BY created_at DESC
+                LIMIT 1
+            """)
+
+            row = self.db.execute(query, {"job_id": job_id}).fetchone()
+
+            if not row:
+                print(f"[REPO] 인사이트 없음")
+                return None
+
+            print(f"[REPO] 인사이트 발견")
+
+            return {
+                "job_id": row.job_id,
+                "summary": row.summary,
+                "insights_json": json.loads(row.insights_json) if row.insights_json else {},
+                "metadata_json": json.loads(row.metadata_json) if row.metadata_json else {},
+                "evidence_ids": json.loads(row.evidence_ids) if row.evidence_ids else [],
+                "created_at": row.created_at.isoformat() if row.created_at else None
+            }
+
+        except Exception as e:
+            print(f"[REPO ERROR] 인사이트 조회 실패: {e}")
+            self.db.rollback()
+            return None
