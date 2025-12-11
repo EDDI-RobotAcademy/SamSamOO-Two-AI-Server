@@ -185,3 +185,19 @@ class ProductRepositoryImpl(ProductRepositoryPort):
                 )
                 for o in orms
             ]
+
+    def update_analysis_status(
+            self,
+            source: str,
+            source_product_id: str,
+            status: str
+    ) -> None:
+        stmt = (
+            self.update(ProductORM)
+            .where(
+                ProductORM.source == source,
+                ProductORM.source_product_id == source_product_id
+            )
+            .values(analysis_status=status)
+        )
+        self.db.execute(stmt)

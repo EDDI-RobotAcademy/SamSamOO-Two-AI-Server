@@ -106,7 +106,7 @@ def get_analysis_results(
 # =========================================================
 # 분석 결과 조회 (GET - 최신 결과)
 # =========================================================
-@analysis_router.get("/{source}/{product_id}/latest")  # ⭐️ 404를 해결하기 위해 경로 정의를 확인했습니다.
+@analysis_router.get("/{source}/{product_id}/latest")  # 추후 코딩 개선 필요
 def get_latest_analysis(
         source: str,
         product_id: str,

@@ -20,10 +20,11 @@ class FetchReviewsUseCase:
             source_value = product.source.value
         else:
             source_value = str(product.source)
-
-        self.repository.save_all(
-            reviews,
-            source=source_value,
-            source_product_id=product.source_product_id
-        )
+    
+        # 저장 task 에서 진행
+        # self.repository.save_all(
+        #     reviews,
+        #     source=source_value,
+        #     source_product_id=product.source_product_id
+        # )
         return reviews
