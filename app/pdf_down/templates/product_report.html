@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ product.title or '상품' }} 분석 보고서</title>
+  <style>
+    /* ---- 인쇄 레이아웃 ---- */
+    @page { size: A4; margin: 16mm; }
+    * { box-sizing: border-box; }
+    html, body { padding:0; margin:0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      color:#1f2937;  /* gray-800 */
+      font-size: 12.5px; line-height:1.65;
+      background:#fff;
+    }
+
+    /* ---- 유틸 ---- */
+    .wrap { max-width: 800px; margin: 0 auto; }
+    .muted { color:#6b7280; }     /* gray-500 */
+    .small { font-size: 11px; }
+    .mt-6 { margin-top: 24px; }
+    .mt-3 { margin-top: 12px; }
+    .mb-0 { margin-bottom: 0; }
+    .row { display:flex; gap:12px; }
+    .grid-3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
+    .grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .section {
+      border:1px solid #e5e7eb;   /* gray-200 */
+      border-radius: 12px;
+      padding: 16px 18px;
+      background:#fff;
+    }
+    .section h2 {
+      display:flex; align-items:center; gap:8px;
+      font-size: 18px; margin: 0 0 10px 0; color:#111827; /* gray-900 */
+    }
+    .pill {
+      display:inline-block;
+      padding: 6px 10px; border-radius: 999px;
+      background:#eef2ff;      /* indigo-50 */
+      color:#4338ca;           /* indigo-700 */
+      border:1px solid #e0e7ff;/* indigo-100 */
+      font-weight: 600; font-size: 12px;
+      margin: 4px 6px 0 0;
+    }
+    .header {
+      display:flex; justify-content:space-between; align-items:flex-start;
+      padding: 18px 20px; border-radius:14px;
+      border:1px solid #e5e7eb; background:#fafafa;
+    }
+    .title { font-size: 20px; font-weight: 800; margin:0 0 6px 0; }
+    .kv { display:grid; grid-template-columns: 90px 1fr; row-gap:6px; column-gap:8px; }
+    .kv b { color:#374151; } /* gray-700 */
+
+    /* ---- 카드(분석 수치) ---- */
+    .stat {
+      border:1px solid #e5e7eb; border-radius:12px; padding:14px;
+      text-align:center; background:#fcfcff;
+    }
+    .stat .label { font-size:13px; color:#6b7280; margin-bottom:6px; }
+    .stat .value { font-size:24px; font-weight:800; margin:2px 0 0 0; }
+    .pos   { background:#ecfdf5; border-color:#a7f3d0; } /* green */
+    .pos .value { color:#059669; }
+    .neu   { background:#f3f4f6; border-color:#e5e7eb; } /* gray */
+    .neu .value { color:#4b5563; }
+    .neg   { background:#fef2f2; border-color:#fecaca; } /* red */
+    .neg .value { color:#dc2626; }
+
+    /* ---- 이슈 리스트 ---- */
+    .issues { margin:6px 0 0 0; padding-left:0; list-style:none; }
+    .issues li { display:flex; gap:8px; align-items:flex-start; margin:6px 0; }
+    .issues .icon { font-size: 14px; line-height: 1.2; color:#b45309; } /* amber-700 */
+    .issues .text { flex:1; }
+
+    /* ---- 리뷰 박스(옵션) ---- */
+    .review-item { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; margin-top:8px; }
+    .review-meta { color:#6b7280; font-size:11.5px; }
+
+    /* ---- 푸터 ---- */
+    .footer { margin-top:22px; color:#6b7280; font-size:11px; }
+
+    /* 페이지 번호 (WeasyPrint 기준) */
+    @page {
+      @bottom-right { content: "Page " counter(page) " / " counter(pages); font-size:10px; color:#9ca3af; }
+    }
+
+    /* 긴 URL도 전체가 클릭되게 줄바꿈 허용 */
+    .breakable-link {
+      word-break: break-all;
+      white-space: normal;
+      color: #0066cc;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- 헤더 -->
+    <div class="header">
+      <div>
+        <div class="title">상품 분석 보고서</div>
+        <div class="muted small">생성일: {{ generated_at }}</div>
+      </div>
+      <div class="muted small">플랫폼: <b>{{ product.source }}</b></div>
+    </div>
+
+    <!-- 상품 정보 -->
+    <div class="section mt-6">
+      <h2>📦 상품 정보</h2>
+      <div class="kv">
+        <div class="muted">상품명</div>
+        <div><b>{{ product.title or '-' }}</b></div>
+
+        <div class="muted">가격</div>
+        <div><b>{{ "{:,}".format(product.price or 0) }}원</b></div>
+
+        <div class="muted">상품 ID</div>
+        <div>{{ product.source_product_id }}</div>
+
+        <div class="muted">등록일</div>
+        <div>{{ product.collected_at or '-' }}</div>
+
+        <div class="muted">URL</div>
+        <div class="small">
+          {% if product.source_url %}
+            <a href="{{ product.source_url }}" target="_blank" rel="noopener" class="breakable-link">
+              {{ product.source_url }}
+            </a>
+          {% else %}
+            -
+          {% endif %}
+        </div>
+
+        {% if product.seller %}
+        <div class="muted">판매자</div>
+        <div>{{ product.seller }}</div>
+        {% endif %}
+
+        {% if product.category %}
+        <div class="muted">카테고리</div>
+        <div>{{ product.category }}</div>
+        {% endif %}
+
+        {% if product.review_count or product.rating %}
+        <div class="muted">리뷰/평점</div>
+        <div>{{ product.review_count or 0 }}건 · ★ {{ product.rating or '-' }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 분석 결과 -->
+    <div class="section mt-6">
+      <h2>📊 분석 결과</h2>
+
+      <div class="grid-3">
+        <div class="stat pos">
+          <div class="label">긍정</div>
+          <div class="value">{{ analysis.sentiment_json.positive or 0 }}%</div>
+        </div>
+        <div class="stat neu">
+          <div class="label">중립</div>
+          <div class="value">{{ analysis.sentiment_json.neutral or 0 }}%</div>
+        </div>
+        <div class="stat neg">
+          <div class="label">부정</div>
+          <div class="value">{{ analysis.sentiment_json.negative or 0 }}%</div>
+        </div>
+      </div>
+
+      {# keywords / issues: keywords_json, issues_json 우선 + top_* 폴백 #}
+      {% set _keywords = analysis.keywords_json or analysis.top_keywords or [] %}
+      {% set _issues   = analysis.issues_json   or analysis.top_issues   or [] %}
+
+      <div class="mt-6">
+        <div class="muted" style="font-weight:700; margin-bottom:6px;">주요 키워드</div>
+        {% if _keywords and _keywords|length > 0 %}
+          {% for k in _keywords %}
+            <span class="pill">{{ k }}</span>
+          {% endfor %}
+        {% else %}
+          <div class="muted">표시할 키워드가 없습니다.</div>
+        {% endif %}
+      </div>
+
+      <div class="mt-6">
+        <div class="muted" style="font-weight:700; margin-bottom:6px;">주요 이슈</div>
+        {% if _issues and _issues|length > 0 %}
+          <ul class="issues">
+            {% for i in _issues %}
+              <li>
+                <span class="icon">⚠️</span>
+                <div class="text">{{ i }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="muted">보고된 이슈가 없습니다.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 인사이트 -->
+    <div class="section mt-6">
+      <h2>🤖 AI 인사이트</h2>
+      <p class="mb-0">{{ insight.summary or '분석 요약이 없습니다.' }}</p>
+    </div>
+
+    {% if reviews and reviews|length %}
+    <!-- (옵션) 리뷰 일부 발췌 -->
+    <div class="section mt-6">
+      <h2>📝 리뷰 하이라이트</h2>
+      {% for r in reviews[:12] %}
+        <div class="review-item">
+          <div class="review-meta">
+            {{ r.reviewer or '-' }} · ★ {{ r.rating or '-' }} · {{ r.review_at or '' }}
+          </div>
+          <div>{{ r.content or '' }}</div>
+        </div>
+      {% endfor %}
+      {% if reviews|length > 12 %}
+        <div class="muted small mt-3">… 그 외 {{ reviews|length - 12 }}건</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="footer">※ 본 문서는 내부 보고용으로 자동 생성되었습니다.</div>
+  </div>
+</body>
+</html>
