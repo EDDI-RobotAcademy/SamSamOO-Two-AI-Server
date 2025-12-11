@@ -8,3 +8,8 @@ class ReviewViewRepositoryPort(ABC):
     @abstractmethod
     def get_reviews_for_display(self, source : str,product_id: str,limit: int = 100) -> List[ReviewDisplayResponse]:
         pass
+
+    """화면 표시용 리뷰 조회 전용 (CQRS-Query)"""
+    @abstractmethod
+    def get_reviews_for_display(self, source: str, product_id: str, limit: int = 100) -> List[ReviewDisplayResponse]:
+        ...

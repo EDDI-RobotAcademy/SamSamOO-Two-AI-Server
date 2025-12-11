@@ -13,4 +13,4 @@ class ProductResponse(BaseModel):
     rating: Optional[float]
     review_count: Optional[int] = None
     source_url: str
-    collected_at: datetime
+    collected_at: Optional[datetime] = None   # ✅ NULL 허용

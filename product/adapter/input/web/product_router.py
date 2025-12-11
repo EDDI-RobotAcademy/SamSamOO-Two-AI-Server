@@ -78,11 +78,23 @@ def get_product_by_composite_key(
 # ----------------------------------------------------------------------
 # 3. 상품 전체 목록 조회 (기존 유지)
 # ----------------------------------------------------------------------
+# product_router.py
 @product_router.get("/list", response_model=List[ProductResponse])
 def get_all_products(limit: int = Query(10, ge=1)):
-    """상품 목록을 조회합니다. (Full Path: /products/list)"""
+    """상품 목록 조회"""
     products = product_uc.get_all_products(limit)
-    return [ProductResponse(**p.__dict__) for p in products]
+
+    result = []
+    for p in products:
+        data = p.__dict__.copy()
+        # registered_at이 None이면 현재 시각으로 설정
+        if data.get('registered_at') is None:
+            from datetime import datetime
+            data['registered_at'] = datetime.utcnow()
+
+        result.append(ProductResponse(**data))
+
+    return result
 
 
 # ----------------------------------------------------------------------

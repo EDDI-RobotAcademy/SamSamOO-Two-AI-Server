@@ -1,5 +1,6 @@
 from typing import List
 
+from config.database.session import get_db_session
 from review.application.port.review_repository_port import ReviewRepositoryPort
 from review.domain.entity.review import Review, ReviewPlatform
 from sqlalchemy.orm import Session
@@ -16,8 +17,8 @@ from review.infrastructure.orm.review_orm import ReviewORM
 
 
 class ReviewRepositoryImpl(ReviewRepositoryPort):
-    def __init__(self, session: Session):
-        self.db: Session = session
+    def __init__(self, session: Session | None = None):
+        self.db: Session = session or get_db_session()
 
     def save_all(self, reviews: List[Review], source: str, source_product_id: str) -> None:
         """리뷰 일괄 저장 (중복 방지 포함)"""
@@ -136,3 +137,17 @@ class ReviewRepositoryImpl(ReviewRepositoryPort):
             domain_reviews.append(review_entity)
 
         return domain_reviews
+
+    # 🔥 Port에 있는 추상 메서드와 100% 동일한 시그니처로 구현
+    def delete_by_product(self, source: str, product_id: str) -> int:
+        from sqlalchemy import text
+        from sqlalchemy import CursorResult
+        res: CursorResult = self.db.execute(
+            text("""
+                DELETE FROM reviews
+                WHERE source = :s AND source_product_id = :p
+            """),
+            {"s": source, "p": product_id},
+        )
+        self.db.commit()
+        return int(res.rowcount or 0)
