@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from config.database.session import get_db_session as get_db
 import os
 import traceback
 
@@ -13,7 +15,7 @@ from product_analysis.application.usecase.analyze_product_usecase import Product
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "YOUR_FALLBACK_KEY")
 
-_analysis_repo = ReviewAnalysisRepositoryImpl()
+
 analysis_router = APIRouter(tags=["analysis"])
 
 
@@ -24,14 +26,21 @@ analysis_router = APIRouter(tags=["analysis"])
     "/{source}/{source_product_id}/run",
     response_model=AnalysisRunResponse
 )
-def run_analysis_for_product(source: str, source_product_id: str):
+def run_analysis_for_product(
+        source: str,
+        source_product_id: str,
+        db: Session = Depends(get_db)  # ⭐️ 요청 시 DB Session 주입
+):
+    # ⭐️ Repository를 함수 내부에서 Session과 함께 생성
+    analysis_repo = ReviewAnalysisRepositoryImpl(session=db)
+
     # LLM 어댑터 생성
     llm = LLMAdapterImpl(api_key=OPENAI_API_KEY)
 
     # 도메인 서비스 생성
     analysis_service = ReviewAnalysisService(
         llm_port=llm,
-        analysis_repo=_analysis_repo
+        analysis_repo=analysis_repo  # ⭐️ 내부 Repository 사용
     )
 
     # Usecase 생성
@@ -65,15 +74,21 @@ def run_analysis_for_product(source: str, source_product_id: str):
 
 
 # =========================================================
-# 분석 결과 조회 (GET)
+# 분석 결과 조회 (GET - by job_id)
 # =========================================================
 @analysis_router.get(
     "/job/{job_id}/results",
     response_model=AnalysisResultsResponse
 )
-def get_analysis_results(job_id: str):
-    metrics_data = _analysis_repo.get_analysis_metrics(job_id)
-    summary_data = _analysis_repo.get_insight_summary(job_id)
+def get_analysis_results(
+        job_id: str,
+        db: Session = Depends(get_db)  # ⭐️ 요청 시 DB Session 주입
+):
+    # ⭐️ Repository를 함수 내부에서 Session과 함께 생성
+    analysis_repo = ReviewAnalysisRepositoryImpl(session=db)
+
+    metrics_data = analysis_repo.get_analysis_metrics(job_id)  # ⭐️ 내부 Repository 사용
+    summary_data = analysis_repo.get_insight_summary(job_id)  # ⭐️ 내부 Repository 사용
 
     if not metrics_data and not summary_data:
         raise HTTPException(
@@ -88,15 +103,25 @@ def get_analysis_results(job_id: str):
     )
 
 
-@analysis_router.get("/{source}/{product_id}/latest")
-def get_latest_analysis(source: str, product_id: str):
+# =========================================================
+# 분석 결과 조회 (GET - 최신 결과)
+# =========================================================
+@analysis_router.get("/{source}/{product_id}/latest")  # 추후 코딩 개선 필요
+def get_latest_analysis(
+        source: str,
+        product_id: str,
+        db: Session = Depends(get_db)  # ⭐️ 요청 시 DB Session 주입
+):
     """최신 분석 결과 조회"""
+
+    # ⭐️ Repository를 함수 내부에서 Session과 함께 생성
+    analysis_repo = ReviewAnalysisRepositoryImpl(session=db)
 
     print(f"[INFO] 최신 분석 결과 조회: {source} / {product_id}")
 
     try:
-        # ⭐️ Repository를 통해 조회
-        analysis_result = _analysis_repo.get_latest_analysis_by_product(
+        # Repository를 통해 최신 분석 결과 조회
+        analysis_result = analysis_repo.get_latest_analysis_by_product(
             source=source,
             product_id=product_id
         )
@@ -108,8 +133,8 @@ def get_latest_analysis(source: str, product_id: str):
         job_id = analysis_result.get("job_id")
         print(f"[INFO] 분석 결과 발견: job_id={job_id}")
 
-        # ⭐️ Repository를 통해 인사이트 조회
-        insight_result = _analysis_repo.get_latest_insight_by_job_id(job_id)
+        # Repository를 통해 인사이트 조회
+        insight_result = analysis_repo.get_latest_insight_by_job_id(job_id)
 
         print(f"[SUCCESS] 분석 결과 반환 완료")
 
@@ -119,6 +144,7 @@ def get_latest_analysis(source: str, product_id: str):
         }
 
     except HTTPException:
+        # 404 등의 HTTP 예외는 재발생시킵니다.
         raise
     except Exception as e:
         print(f"[ERROR] 분석 결과 조회 실패: {e}")

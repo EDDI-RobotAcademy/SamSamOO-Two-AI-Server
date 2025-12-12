@@ -8,7 +8,6 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from config.database.session import Base
 
-
 class ReviewORM(Base):
     __tablename__ = 'reviews'
 
@@ -38,7 +37,7 @@ class ReviewORM(Base):
     )
 
     # ProductORM relationship
-    product = relationship("ProductORM", backref="reviews")
+    product = relationship("ProductORM", back_populates="reviews")
 
     def to_review_data(self) -> Dict[str, Any]:
         """ORM 객체를 도메인에서 사용하는 ReviewData 딕셔너리로 변환"""

@@ -24,10 +24,16 @@ class ProductCategory(Enum):
 
 
 class AnalysisStatus(Enum):
-    PENDING = "PENDING"  # 분석 대기 중
-    IN_PROGRESS = "IN_PROGRESS"  # 분석 진행 중
-    COMPLETED = "COMPLETED"  # 분석 완료
-    FAILED = "FAILED"  # 분석 실패
+    # PENDING = "PENDING"  # 분석 대기 중
+    # IN_PROGRESS = "IN_PROGRESS"  # 분석 진행 중
+    # COMPLETED = "COMPLETED"  # 분석 완료
+    # FAILED = "FAILED"  # 분석 실패
+    PENDING = "PENDING"       # 수집 대기
+    CRAWLING = "CRAWLING"     # 리뷰 수집 중
+    COLLECTED = "COLLECTED"   # 리뷰 수집 완료
+    ANALYZING = "ANALYZING"   # 분석 중
+    ANALYZED = "ANALYZED"     # 분석 완료
+    FAILED = "FAILED"         # 실패
 
     @classmethod
     def from_string(cls, value: str):

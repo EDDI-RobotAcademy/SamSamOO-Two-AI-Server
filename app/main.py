@@ -1,6 +1,7 @@
 import os
 
 from config.database.session import Base, engine
+from app.pdf_down.router import pdf_down_router
 from samsam_danawa.adapter.danawa_router import router as danawa_router
 from social_oauth.adapter.input.web.google_oauth2_router import authentication_router
 from config.env_loader import load_env
@@ -40,6 +41,7 @@ app.include_router(product_router, prefix="/product")
 app.include_router(analysis_router, prefix="/analysis")
 app.include_router(account_router, prefix="/account")
 app.include_router(dashboard_router, prefix="/dashboard")
+app.include_router(pdf_down_router.router)
 
 # 앱 실행
 if __name__ == "__main__":
